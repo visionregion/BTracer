@@ -3,8 +3,13 @@ public class NetworkRule {
     private String policy;
     private String protocol;
     private String sourceIP;
+    private String sourceIPmask;
     private String destinationIP;
-    private String port;
+    private String destinationIPmask;
+    private String sourcePort;
+    private String destinationPort;
+
+    public NetworkRule() {}
 
     public String getPolicy() {
         return policy;
@@ -22,8 +27,20 @@ public class NetworkRule {
         return destinationIP;
     }
 
-    public String getPort() {
-        return port;
+    public String getSourcePort() {
+        return sourcePort;
+    }
+
+    public String getDestinationPort() {
+        return destinationPort;
+    }
+
+    public String getSourceIPmask() {
+        return sourceIPmask;
+    }
+
+    public String getDestinationIPmask() {
+        return destinationIPmask;
     }
 
     public void setPolicy(String policy) {
@@ -42,7 +59,19 @@ public class NetworkRule {
         this.destinationIP = destinationIP;
     }
 
-    public void setPort(String port) {
-        this.port = port;
+    public void setSourcePort(String port) {
+        this.sourcePort = port;
+    }
+
+    public void setDestinationPort(String port) {
+        this.destinationPort = port;
+    }
+
+    public void setSourceIPmask(String sourceIPmask) {
+        this.sourceIPmask = sourceIPmask;
+    }
+
+    public void setDestinationIPmask(String destinationIPmask) {
+        this.destinationIPmask = destinationIPmask;
     }
 }

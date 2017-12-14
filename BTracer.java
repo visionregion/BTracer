@@ -1,27 +1,27 @@
 import java.io.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Properties;
 
 public class BTracer {
     public static void main (String[] args) {
         String aclLine;
+        String fields[];
         String path="";
-        String findWord;
-        String sRegex;
-        Pattern pattern;
-        Matcher replaced;
-        int count;
+        int lineCount;
+        int count = 0;
+        int position = 0;
+        NetworkRule[] networkRules;
 
         Properties prop = new Properties();
         InputStream input = null;
 
+        // load properties
         try {
 
             input = new FileInputStream("resources/config.properties");
             prop.load(input);
 
-            //System.out.println(prop.getProperty("path"));
             path = prop.getProperty("path");
         } catch (IOException ex) {
             ex.printStackTrace();
@@ -35,26 +35,74 @@ public class BTracer {
             }
         }
 
-        findWord = "deny";
-        sRegex = "(.*)"+"("+findWord+")"+"(.*)";
-        pattern = Pattern.compile("[a]+");
-        count = 0;
-
+        // fill rules array
         try (BufferedReader aclFile =
                      new BufferedReader(new FileReader(path)))
         {
-            while ((aclLine = aclFile.readLine()) != null) {
-                System.out.println(aclLine);
-                if(aclLine.matches(sRegex)) System.out.println("found: " + aclLine.replaceAll(sRegex, "$2"));
-                replaced = pattern.matcher(aclLine);
-                while (replaced.find()) {
-                    count++;
-                }
+            lineCount = (int) Files.lines(Paths.get(path)).count();
+            networkRules = new NetworkRule[lineCount];
+
+            for(int i=0;i<lineCount;i++) {
+                networkRules[i] = new NetworkRule();
             }
+
+            while ((aclLine = aclFile.readLine()) != null) {
+                //System.out.println(aclLine);
+                aclLine = aclLine.trim();
+                fields = aclLine.split(" ");
+
+                position++;
+                networkRules[count].setPolicy(fields[position]);
+                position++;
+                networkRules[count].setProtocol(fields[position]);
+                position++;
+                if (fields[position].equals("host")) {
+                    networkRules[count].setSourceIP(fields[position+1]);
+                    networkRules[count].setSourceIPmask("0.0.0.0");
+                    position+=2;
+                } else if (fields[position].equals("any")) {
+                    networkRules[count].setSourceIP("0.0.0.0");
+                    networkRules[count].setSourceIPmask("255.255.255.255");
+                    position++;
+                } else {
+                    networkRules[count].setSourceIP(fields[position]);
+                    networkRules[count].setSourceIPmask(fields[position+1]);
+                    position+=2;
+                }
+                if (fields[position].equals("eq")) {
+                    networkRules[count].setSourcePort(fields[position+1]);
+                    position+=2;
+                }
+                if (fields[position].equals("host")) {
+                    networkRules[count].setDestinationIP(fields[position+1]);
+                    networkRules[count].setDestinationIPmask("0.0.0.0");
+                    position+=2;
+                } else if (fields[position].equals("any")) {
+                    networkRules[count].setDestinationIP("0.0.0.0");
+                    networkRules[count].setDestinationIPmask("255.255.255.255");
+                    position++;
+                } else {
+                    networkRules[count].setDestinationIP(fields[position]);
+                    networkRules[count].setDestinationIPmask(fields[position+1]);
+                    position+=2;
+                }
+                if (position<fields.length) {
+                    if (fields[position].equals("eq")) {
+                        networkRules[count].setDestinationPort(fields[position + 1]);
+                    }
+                }
+                count++;
+                position=0;
+            }
+
+            System.out.println("lines: "+lineCount);
+
         } catch (IOException e) {
             System.out.println("Input/Output error: " + e);
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+        } catch (ArrayIndexOutOfBoundsException e) {
+            e.printStackTrace();
         }
-
-        System.out.println("count: " + count);
-    }
+     }
 }
